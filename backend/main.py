@@ -1,9 +1,20 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from src.utils.db import Base, engine
-import src.utils.models  # Register models for Base metadata
+from src.routes.auth import router as auth_router
+from src.utils.db import init_db
 
-Base.metadata.create_all(engine) # means as soon as server starts we try to create with database
-app = FastAPI(title="RemindMed!")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="RemindMed!", lifespan=lifespan)
+init_db()
+
+app.include_router(auth_router)
+
 
 # Test Route
 @app.get("/")

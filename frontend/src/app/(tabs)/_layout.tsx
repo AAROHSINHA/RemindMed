@@ -14,11 +14,11 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
       }}>
       <Tabs.Screen
-        name="verify"
+        name="home"
         options={{
-          title: 'Verify',
+          title: "Home",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="checkmark-circle-outline" size={sizes.iconSize.lg} color={color} />
+            <Ionicons name="home-outline" size={sizes.iconSize.lg} color={color} />
           ),
         }}
       />

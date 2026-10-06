@@ -22,7 +22,7 @@ export default function LandingScreen() {
     );
 
     Promise.all([authCheck, minDelay]).then(([isAuthenticated]) => {
-      if (active) router.replace(isAuthenticated ? "/home" : "/auth/login");
+      if (active) router.replace(isAuthenticated ? "/main/home" : "/auth/login");
     });
 
     return () => {

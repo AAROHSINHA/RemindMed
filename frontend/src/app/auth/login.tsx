@@ -40,7 +40,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await loginUser({ identifier: identifier.trim(), password });
-      router.replace("/home");
+      router.replace("/main/home");
     } catch (e) {
       setFormError((e as ApiError).message);
     } finally {

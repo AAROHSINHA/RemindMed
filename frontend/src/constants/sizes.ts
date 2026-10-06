@@ -39,12 +39,22 @@ export const sizes = {
   buttonHeight: 56,
   avatarSize: 96,
   iconBoxSize: 44,
+  avatarSmall: 48,
+  tabBarHeight: 72,
+  scanButtonSize: 56,
+  statusIconSize: 28,
   decorativeBlob: 280,
 
   iconSize: {
     sm: 16,
     md: 20,
     lg: 24,
+  },
+
+  shadow: {
+    radius: 12,
+    opacity: 0.1,
+    elevation: 8,
   },
 
   opacity: {

@@ -81,7 +81,7 @@ export default function SignUpScreen() {
         identifier: payload.email,
         password: payload.password,
       });
-      router.replace("/home");
+      router.replace("/main/home");
       console.log("SIGNUP SUCCESFUL");
     } catch (e) {
       console.log("ERROR IN SIGNUP - ", e);

@@ -12,18 +12,26 @@ export default function LandingScreen() {
   useEffect(() => {
     let active = true;
 
-    // Run the auth check while the minimum landing time elapses.
-    const authCheck = checkAuth().then(
-      () => true,
-      () => false,
-    );
-    const minDelay = new Promise((resolve) =>
-      setTimeout(resolve, LANDING_DURATION_MS),
-    );
+    const verifyAuth = async () => {
+      let isAuthenticated = false;
+      const startedAt = Date.now();
 
-    Promise.all([authCheck, minDelay]).then(([isAuthenticated]) => {
-      if (active) router.replace(isAuthenticated ? "/main/home" : "/auth/login");
-    });
+      try {
+        await checkAuth();
+        isAuthenticated = true;
+      } catch (e) {
+        console.log("[AUTH CHECK] not authenticated:", e);
+      } finally {
+        // Keep the landing screen visible for the minimum duration.
+        const remaining = LANDING_DURATION_MS - (Date.now() - startedAt);
+        if (remaining > 0) {
+          await new Promise((resolve) => setTimeout(resolve, remaining));
+        }
+        if (active) router.replace(isAuthenticated ? "/main/home" : "/auth/login");
+      }
+    };
+
+    verifyAuth();
 
     return () => {
       active = false;

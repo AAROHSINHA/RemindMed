@@ -43,6 +43,9 @@ export const sizes = {
   tabBarHeight: 72,
   scanButtonSize: 56,
   statusIconSize: 28,
+  ringSize: 180,
+  ringBorder: 4,
+  progressHeight: 8,
   decorativeBlob: 280,
 
   iconSize: {

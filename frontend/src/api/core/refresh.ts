@@ -17,7 +17,8 @@ export const refreshAccessToken = async (): Promise<string> => {
     );
     await saveTokens(data.access_token, data.refresh_token);
     return data.access_token;
-  } catch {
+  } catch (error: any) {
+    console.log("[REFRESH ERROR]", error?.response?.status, error?.response?.data ?? error?.message);
     await clearTokens();
     throw SESSION_EXPIRED;
   }

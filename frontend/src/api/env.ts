@@ -1,5 +1,5 @@
 import axios from "axios";
-export const API_BASE_URL = "http://10.247.225.87:8000";
+export const API_BASE_URL = "http://10.157.196.87:8000";
 
 export interface ApiError {
   message: string;
@@ -16,6 +16,17 @@ const FIELD_LABELS: Record<string, string> = {
 
 // Turns FastAPI/axios errors (409 string detail, 422 detail array, network) into one shape.
 export function extractApiError(error: unknown): ApiError {
+  if (axios.isAxiosError(error)) {
+    console.log("[API ERROR]", {
+      method: error.config?.method?.toUpperCase(),
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+  } else {
+    console.log("[API ERROR]", error);
+  }
   if (!axios.isAxiosError(error)) {
     return { message: "Something went wrong. Please try again." };
   }
@@ -25,7 +36,11 @@ export function extractApiError(error: unknown): ApiError {
     };
   }
 
-  const { status, data } = error.response;
+  return buildApiError(error.response.status, error.response.data);
+}
+
+// Maps an HTTP status + FastAPI body to a user-facing error (shared by axios and fetch callers).
+export function buildApiError(status: number, data: any): ApiError {
   const detail = data?.detail;
 
   if (status === 422 && Array.isArray(detail)) {

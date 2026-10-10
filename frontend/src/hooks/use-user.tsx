@@ -10,11 +10,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
-    getMe()
-      .then(setUser)
-      .catch((e) => {
+    const loadUser = async () => {
+      try {
+        const data = await getMe();
+        setUser(data);
+      } catch (e: any) {
+        console.log("[USER LOAD ERROR]", e);
         if (e?.status === 401) router.replace("/auth/login");
-      });
+      }
+    };
+
+    loadUser();
   }, []);
 
   return <UserContext.Provider value={user}>{children}</UserContext.Provider>;

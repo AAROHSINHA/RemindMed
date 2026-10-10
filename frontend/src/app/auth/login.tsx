@@ -116,6 +116,10 @@ export default function LoginScreen() {
                 }
               />
 
+              {formError ? (
+                <Text style={styles.formError}>{formError}</Text>
+              ) : null}
+
               <MainButton
                 text="Log In"
                 onClick={handleLogin}

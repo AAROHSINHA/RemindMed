@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from google.api_core import exceptions as google_exceptions
 from google.auth import exceptions as auth_exceptions
+from sqlalchemy.orm import Session
 
+from src.utils.config.db import get_db
+from src.utils.config.prescription_store import store_prescription
 from src.utils.config.tokenConfig import get_current_user
 from src.utils.config.vision import VisionResponseError, extract_document_text
 from src.utils.config.gemini import extract_medications
@@ -31,6 +34,7 @@ def _report_error(stage: str, hint: str, exc: Exception) -> None:
 async def ocr(
     image: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     if not (image.content_type or "").startswith("image/"):
         print(
@@ -216,17 +220,60 @@ async def ocr(
             flush=True,
         )
 
-    # Step 3: Return OCR text and structured data to the frontend.
-    # No database records or medication schedules are created here.
+    # Step 3: Save the prescription, its medications and their schedules.
+    saved = None
+
+    if medications:
+        print(
+            f"[DB] Saving {len(medications)} medication(s) for user id={current_user.id}...",
+            flush=True,
+        )
+
+        try:
+            saved = await run_in_threadpool(
+                store_prescription,
+                db,
+                current_user.id,
+                gemini_result,
+            )
+
+        except Exception as exc:
+            db.rollback()
+            _report_error(
+                "database",
+                "Could not save the extracted prescription. Check the DB connection "
+                "and that the tables exist.",
+                exc,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not save the prescription",
+            )
+
+        if saved:
+            print(
+                f"[DB] SUCCESS: prescription id={saved['prescription']['id']} with "
+                f"{len(saved['medications'])} medication(s) saved",
+                flush=True,
+            )
+        else:
+            print("[DB] Nothing saved: no valid medication entries.", flush=True)
+
+    # Step 4: Return OCR text, the saved prescription and its medications.
+    has_medications = bool(saved)
+
     return {
         "success": True,
         "message": (
-            "Text and medication data extracted"
+            "Prescription saved"
+            if has_medications
+            else "No medications detected in the image"
             if text.strip()
             else "No text detected in the image"
         ),
         "text": text,
         "pages": result["pages"],
         "size": len(contents),
-        "medications": medications,
+        "prescription": saved["prescription"] if saved else None,
+        "medications": saved["medications"] if saved else [],
     }

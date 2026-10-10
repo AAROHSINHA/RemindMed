@@ -10,15 +10,49 @@ export interface PrescriptionImage {
   mimeType: string;
 }
 
+export interface ScannedSchedule {
+  id: number;
+  scheduled_time: string; // "HH:MM:SS"
+  enabled: boolean;
+}
+
+export interface ScannedMedication {
+  id: number;
+  medicine_name: string;
+  strength: string | null;
+  dosage: string | null;
+  dosage_unit: string | null;
+  frequency: string | null;
+  duration_days: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  instructions: string | null;
+  ai_confidence: number | null;
+  schedules: ScannedSchedule[];
+}
+
+export interface ScannedPrescription {
+  id: number;
+  name: string;
+  doctor_name: string | null;
+  notes: string | null;
+  status: string;
+  created_at: string | null;
+}
+
 export interface OcrUploadResponse {
   success: boolean;
   message: string;
   text: string;
   pages: number;
   size: number;
+  prescription: ScannedPrescription | null;
+  medications: ScannedMedication[];
 }
 
-const UPLOAD_TIMEOUT_MS = 30000;
+// The request covers upload + Vision OCR + Gemini + DB save. Let the user wait: this is only
+// a last-resort ceiling. The processing screen shows "still working" messages along the way.
+const UPLOAD_TIMEOUT_MS = 300000;
 
 // Sends one multipart request.
 // SDK 57 installs expo/fetch as the global fetch, and it does NOT accept React Native's
@@ -51,10 +85,13 @@ const sendImage = async (token: string, { uri, fileName, mimeType }: Prescriptio
     return { status: response.status, ok: response.ok, data };
   } catch (error: any) {
     console.log("[UPLOAD ERROR] no response from server:", error?.name, error?.message);
-    const message =
-      error?.name === "AbortError"
-        ? "The upload took too long. Please try again."
-        : `Upload failed: ${error?.message ?? "could not reach the server"}`;
+    // expo/fetch reports a cancelled request as "fetch request has been cancelled",
+    // not always with the name AbortError, so check the message too.
+    const cancelled =
+      error?.name === "AbortError" || /cancel|abort/i.test(error?.message ?? "");
+    const message = cancelled
+      ? "The scan timed out after 5 minutes. Please try again."
+      : `Upload failed: ${error?.message ?? "could not reach the server"}`;
     throw { message } as ApiError;
   } finally {
     clearTimeout(timer);

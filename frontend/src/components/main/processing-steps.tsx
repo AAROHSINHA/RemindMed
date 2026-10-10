@@ -7,7 +7,7 @@ import { sizes } from "@/constants/sizes";
 
 const STEPS = ["Reading text", "Identifying medicines", "Extracting dosage & schedule"];
 const STEP_INTERVAL_MS = 2500;
-const PROGRESS_DURATION_MS = 12000;
+const PROGRESS_DURATION_MS = 40000;
 
 // Progress bar + checklist. Purely visual: it eases toward 90% and ticks steps on a timer
 // until the screen navigates away when the upload finishes.

@@ -46,6 +46,8 @@ export const sizes = {
   ringSize: 180,
   ringBorder: 4,
   progressHeight: 8,
+  fieldHeight: 44,
+  timeFieldWidth: 96,
   decorativeBlob: 280,
 
   iconSize: {

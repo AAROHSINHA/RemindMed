@@ -3,7 +3,7 @@ from functools import lru_cache
 from google.cloud import vision
 
 
-from src.utils.settings import settings
+from src.utils.config.settings import settings
 
 import os
 

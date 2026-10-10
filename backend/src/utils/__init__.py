@@ -1,5 +1,5 @@
-from src.utils.db import Base, engine, get_db, LocalSession, init_db
-from src.utils.settings import settings
+from src.utils.config.db import Base, engine, get_db, LocalSession, init_db
+from src.utils.config.settings import settings
 from src.utils.models import (
     User,
     Prescription,

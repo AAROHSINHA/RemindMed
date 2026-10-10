@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.routes.auth import router as auth_router
 from src.routes.ocr import router as ocr_router
-from src.utils.db import init_db
+from src.utils.config.db import init_db
 
 
 @asynccontextmanager

@@ -10,7 +10,7 @@ from src.utils.config.tokenConfig import (
     decode_token,
     get_current_user,
 )
-from src.utils.db import get_db
+from src.utils.config.db import get_db
 from src.utils.models import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])

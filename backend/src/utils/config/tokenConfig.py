@@ -5,9 +5,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from src.utils.db import get_db
+from src.utils.config.db import get_db
 from src.utils.models import User
-from src.utils.settings import settings
+from src.utils.config.settings import settings
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE = timedelta(minutes=15)

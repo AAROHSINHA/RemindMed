@@ -5,6 +5,9 @@ class Settings(BaseSettings):
 
     DB_CONNECTION: str
     JWT_SECRET: str
+    # Path to the Google service-account JSON. Optional: falls back to the standard
+    # GOOGLE_APPLICATION_CREDENTIALS environment variable.
+    GOOGLE_APPLICATION_CREDENTIALS: str | None = None
 
 # Object
 settings = Settings() # now whenever we need DB_CONNECTION, we will import object settings

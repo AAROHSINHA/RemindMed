@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from src.utils.config.token import (
+from src.utils.config.tokenConfig import (
     REFRESH,
     create_token_pair,
     decode_token,

@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import type { ScannedMedication } from "@/api/ocr";
+import { ReminderTimes } from "@/components/main/reminder-times";
 import { LabeledInput } from "@/components/sharedComponents/labeled-input";
 import { colors } from "@/constants/colors";
 import { sizes } from "@/constants/sizes";
@@ -9,18 +10,18 @@ import { sizes } from "@/constants/sizes";
 type MedicineEditCardProps = {
   medication: ScannedMedication;
   onChange: (medication: ScannedMedication) => void;
+  missingTime?: boolean;
+  onRemove?: () => void;
 };
 
 // One detected medicine. Every field is a text input, so tapping a value edits it.
-export function MedicineEditCard({ medication, onChange }: MedicineEditCardProps) {
+export function MedicineEditCard({
+  medication,
+  onChange,
+  missingTime,
+  onRemove,
+}: MedicineEditCardProps) {
   const update = (changes: Partial<ScannedMedication>) => onChange({ ...medication, ...changes });
-
-  const updateTime = (index: number, value: string) => {
-    const schedules = medication.schedules.map((schedule, i) =>
-      i === index ? { ...schedule, scheduled_time: value } : schedule,
-    );
-    update({ schedules });
-  };
 
   return (
     <View style={styles.card}>
@@ -46,7 +47,18 @@ export function MedicineEditCard({ medication, onChange }: MedicineEditCardProps
           />
         </View>
 
-        <Ionicons name="create-outline" size={sizes.iconSize.md} color={colors.textMuted} />
+        {onRemove ? (
+          <Pressable
+            onPress={onRemove}
+            accessibilityRole="button"
+            accessibilityLabel="Remove medicine"
+            hitSlop={sizes.spacing.xs}
+          >
+            <Ionicons name="trash-outline" size={sizes.iconSize.md} color={colors.error} />
+          </Pressable>
+        ) : (
+          <Ionicons name="create-outline" size={sizes.iconSize.md} color={colors.textMuted} />
+        )}
       </View>
 
       <View style={styles.row}>
@@ -92,25 +104,11 @@ export function MedicineEditCard({ medication, onChange }: MedicineEditCardProps
         />
       </View>
 
-      {medication.schedules.length > 0 ? (
-        <View style={styles.times}>
-          <Text style={styles.timesLabel}>Reminder times</Text>
-          <View style={styles.timesRow}>
-            {medication.schedules.map((schedule, index) => (
-              <TextInput
-                key={schedule.id}
-                value={schedule.scheduled_time}
-                onChangeText={(value) => updateTime(index, value)}
-                placeholder="09:00"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="numbers-and-punctuation"
-                maxLength={8}
-                style={styles.time}
-              />
-            ))}
-          </View>
-        </View>
-      ) : null}
+      <ReminderTimes
+        times={medication.schedules}
+        onChange={(schedules) => update({ schedules })}
+        showError={missingTime}
+      />
     </View>
   );
 }
@@ -155,31 +153,5 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     gap: sizes.spacing.sm,
-  },
-  times: {
-    gap: sizes.spacing.xxs,
-  },
-  timesLabel: {
-    fontSize: sizes.fontSize.xs,
-    fontFamily: "JetBrainsMonoMedium",
-    color: colors.textMuted,
-  },
-  timesRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: sizes.spacing.xs,
-  },
-  time: {
-    width: sizes.timeFieldWidth,
-    height: sizes.fieldHeight,
-    paddingHorizontal: sizes.spacing.sm,
-    textAlign: "center",
-    borderRadius: sizes.radius.md,
-    borderWidth: sizes.borderWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.inputBackground,
-    fontSize: sizes.fontSize.sm,
-    fontFamily: "JetBrainsMonoMedium",
-    color: colors.textPrimary,
   },
 });

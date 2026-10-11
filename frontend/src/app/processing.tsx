@@ -14,9 +14,18 @@ import { setScanResult } from "@/utils/scan-result";
 
 // Reassuring messages shown when the scan runs long (seconds elapsed -> message).
 const SLOW_MESSAGES = [
-  { afterSeconds: 120, text: "This is taking longer than expected. Hang tight, we're still working on it." },
-  { afterSeconds: 180, text: "Still processing. Detailed prescriptions can take a little longer to analyse." },
-  { afterSeconds: 240, text: "Almost there. Thanks for your patience, we'll have your medicines ready shortly." },
+  {
+    afterSeconds: 120,
+    text: "This is taking longer than expected. Hang tight, we're still working on it.",
+  },
+  {
+    afterSeconds: 180,
+    text: "Still processing. Detailed prescriptions can take a little longer to analyse.",
+  },
+  {
+    afterSeconds: 240,
+    text: "Almost there. Thanks for your patience, we'll have your medicines ready shortly.",
+  },
 ];
 
 // Uploads the captured image, shows progress, then hands the OCR text (or error) to the result screen.
@@ -51,6 +60,7 @@ export default function ProcessingScreen() {
           setScanResult({
             prescription: data.prescription,
             medications: data.medications,
+            truncated: data.truncated ?? false,
           });
           router.replace("/review-prescription");
           return;

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProfileHeader } from "@/components/main/profile-header";
@@ -7,9 +8,16 @@ import { ScanTabButton } from "@/components/main/scan-tab-button";
 import { colors } from "@/constants/colors";
 import { sizes } from "@/constants/sizes";
 import { UserProvider } from "@/hooks/use-user";
+import { getReminderMode, startInAppReminderEngine } from "@/services/reminders";
 
 export default function MainLayout() {
   const insets = useSafeAreaInsets();
+
+  // Only when OS notifications can't be loaded: check reminders while the app is open.
+  useEffect(() => {
+    if (getReminderMode() === "system") return;
+    return startInAppReminderEngine();
+  }, []);
 
   return (
     <UserProvider>

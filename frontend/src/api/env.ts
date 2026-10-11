@@ -1,5 +1,5 @@
 import axios from "axios";
-export const API_BASE_URL = "http://10.157.196.87:8000";
+export const API_BASE_URL = "http://10.150.10.87:8000";
 
 export interface ApiError {
   message: string;

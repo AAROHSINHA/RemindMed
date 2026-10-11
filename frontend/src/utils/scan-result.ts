@@ -1,8 +1,9 @@
-import type { ScannedMedication, ScannedPrescription } from "@/api/ocr";
+import type { ExtractedMedication, ExtractedPrescription } from "@/api/ocr";
 
 export interface ScanResult {
-  prescription: ScannedPrescription;
-  medications: ScannedMedication[];
+  prescription: ExtractedPrescription;
+  medications: ExtractedMedication[];
+  truncated: boolean;
 }
 
 // Hands the saved prescription from the processing screen to the review screen.

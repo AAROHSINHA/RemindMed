@@ -1,50 +1,76 @@
 import { Ionicons } from "@expo/vector-icons";
-import { type ComponentProps } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/constants/colors";
 import { sizes } from "@/constants/sizes";
-import type { MedicationItem, MedicationStatus } from "@/data/mock-medications";
+import type { TodayMedicine } from "@/api/user/medicine";
 
-type IconName = ComponentProps<typeof Ionicons>["name"];
+function formatTime(time: string | null): string {
+  if (!time) return "--:--";
 
-// Icon statuses show a right-side icon; badge statuses show a small label instead.
-const statusConfig: Record<
-  MedicationStatus,
-  { color: string; icon?: IconName; badge?: string }
-> = {
-  taken: { color: colors.success, icon: "checkmark-circle" },
-  pending: { color: colors.primary, icon: "time-outline" },
-  missed: { color: colors.error, icon: "close-circle" },
-  skipped: { color: colors.warning, icon: "remove-circle" },
-  active: { color: colors.success, badge: "Active" },
-  completed: { color: colors.textMuted, badge: "Completed" },
-};
+  const [hours, minutes] = time.split(":").map(Number);
 
-export type MedicationCardProps = Omit<MedicationItem, "id">;
+  if (
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return time;
+  }
 
-export function MedicationCard({ name, dosage, detail, status }: MedicationCardProps) {
-  const config = status ? statusConfig[status] : undefined;
+  const period = hours >= 12 ? "PM" : "AM";
+  const formattedHours = hours % 12 || 12;
 
+  return `${formattedHours}:${String(minutes).padStart(2, "0")} ${period}`;
+}
+
+export function MedicationCard(medicine: TodayMedicine) {
   return (
     <View style={styles.card}>
       <View style={styles.iconBox}>
-        <Ionicons name="medical-outline" size={sizes.iconSize.md} color={colors.primary} />
+        <Ionicons
+          name="medical-outline"
+          size={sizes.iconSize.md}
+          color={colors.primary}
+        />
       </View>
 
-      <View style={styles.text}>
-        <Text style={styles.name}>
-          {name} <Text style={styles.dosage}>{dosage}</Text>
-        </Text>
-        <Text style={styles.detail}>{detail}</Text>
+      <View style={styles.content}>
+        <View style={styles.nameRow}>
+          <Text style={styles.name} numberOfLines={2}>
+            {medicine.medicine_name ?? "Unnamed medicine"}
+          </Text>
+
+          {medicine.strength ? (
+            <>
+              <View style={styles.separator} />
+              <Text style={styles.strength} numberOfLines={1}>
+                {medicine.strength}
+              </Text>
+            </>
+          ) : null}
+        </View>
+
+        <View style={styles.timePill}>
+          <Ionicons
+            name="time-outline"
+            size={sizes.iconSize.sm}
+            color={colors.primary}
+          />
+          <Text style={styles.timeText}>
+            {formatTime(medicine.scheduled_time)}
+          </Text>
+        </View>
       </View>
 
-      {config?.icon ? (
-        <Ionicons name={config.icon} size={sizes.statusIconSize} color={config.color} />
-      ) : null}
-      {config?.badge ? (
-        <Text style={[styles.badge, { color: config.color }]}>{config.badge}</Text>
-      ) : null}
+      {/* <Ionicons
+        name="chevron-forward"
+        size={sizes.iconSize.sm}
+        color={colors.textMuted}
+      /> */}
     </View>
   );
 }
@@ -55,11 +81,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: sizes.spacing.md,
     padding: sizes.spacing.md,
-    borderRadius: sizes.radius.md,
+    borderRadius: sizes.radius.lg,
     borderWidth: sizes.borderWidth,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
+
   iconBox: {
     width: sizes.iconBoxSize,
     height: sizes.iconBoxSize,
@@ -68,27 +95,53 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.lavenderBackground,
   },
-  text: {
+
+  content: {
     flex: 1,
     gap: sizes.spacing.xxs,
   },
+
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: sizes.spacing.sm,
+    rowGap: sizes.spacing.xxs,
+  },
+
   name: {
+    flexShrink: 1,
     fontSize: sizes.fontSize.md,
     fontFamily: "InterSemiBold",
     color: colors.textPrimary,
   },
-  dosage: {
+
+  separator: {
+    width: 1,
+    height: sizes.fontSize.md,
+    backgroundColor: colors.border,
+  },
+
+  strength: {
     fontSize: sizes.fontSize.xs,
     fontFamily: "JetBrainsMonoMedium",
     color: colors.textSecondary,
   },
-  detail: {
-    fontSize: sizes.fontSize.xs,
-    fontFamily: "JetBrainsMonoMedium",
-    color: colors.textMuted,
+
+  timePill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: sizes.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: sizes.radius.pill,
+    backgroundColor: colors.lavenderBackground,
   },
-  badge: {
+
+  timeText: {
     fontSize: sizes.fontSize.xs,
-    fontFamily: "JetBrainsMonoSemiBold",
+    fontFamily: "InterSemiBold",
+    color: colors.primary,
   },
 });

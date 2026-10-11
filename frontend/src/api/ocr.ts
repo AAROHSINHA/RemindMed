@@ -10,6 +10,33 @@ export interface PrescriptionImage {
   mimeType: string;
 }
 
+// What /ocr returns: cleaned LLM output. Nothing is saved yet, so there are no ids.
+export interface ExtractedSchedule {
+  scheduled_time: string; // "HH:MM:SS"
+  enabled: boolean;
+}
+
+export interface ExtractedMedication {
+  medicine_name: string;
+  strength: string | null;
+  dosage: string | null;
+  dosage_unit: string | null;
+  frequency: string | null;
+  duration_days: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  instructions: string | null;
+  ai_confidence: number | null;
+  schedules: ExtractedSchedule[];
+}
+
+export interface ExtractedPrescription {
+  name: string;
+  doctor_name: string | null;
+  notes: string | null;
+}
+
+// Saved records (returned by POST /prescriptions) carry database ids.
 export interface ScannedSchedule {
   id: number;
   scheduled_time: string; // "HH:MM:SS"
@@ -46,8 +73,10 @@ export interface OcrUploadResponse {
   text: string;
   pages: number;
   size: number;
-  prescription: ScannedPrescription | null;
-  medications: ScannedMedication[];
+  prescription: ExtractedPrescription | null;
+  medications: ExtractedMedication[];
+  // true when the LLM output was cut off and some medicines may be missing
+  truncated?: boolean;
 }
 
 // The request covers upload + Vision OCR + Gemini + DB save. Let the user wait: this is only

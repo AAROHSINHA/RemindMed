@@ -5,10 +5,8 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from google.api_core import exceptions as google_exceptions
 from google.auth import exceptions as auth_exceptions
-from sqlalchemy.orm import Session
 
-from src.utils.config.db import get_db
-from src.utils.config.prescription_store import store_prescription
+from src.utils.config.prescription_store import normalize_extraction
 from src.utils.config.tokenConfig import get_current_user
 from src.utils.config.vision import VisionResponseError, extract_document_text
 from src.utils.config.gemini import extract_medications
@@ -34,7 +32,6 @@ def _report_error(stage: str, hint: str, exc: Exception) -> None:
 async def ocr(
     image: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     if not (image.content_type or "").startswith("image/"):
         print(
@@ -220,53 +217,24 @@ async def ocr(
             flush=True,
         )
 
-    # Step 3: Save the prescription, its medications and their schedules.
-    saved = None
+    # Step 3: Clean the extracted data for the frontend.
+    # Nothing is written to the database here. The prescription is only stored when the
+    # user reviews it and confirms (POST /prescriptions).
+    extracted = normalize_extraction(gemini_result) if medications else None
 
-    if medications:
+    if extracted:
         print(
-            f"[DB] Saving {len(medications)} medication(s) for user id={current_user.id}...",
+            f"[OCR] {len(extracted['medications'])} medication(s) ready for review "
+            "(not saved to the database yet).",
             flush=True,
         )
 
-        try:
-            saved = await run_in_threadpool(
-                store_prescription,
-                db,
-                current_user.id,
-                gemini_result,
-            )
-
-        except Exception as exc:
-            db.rollback()
-            _report_error(
-                "database",
-                "Could not save the extracted prescription. Check the DB connection "
-                "and that the tables exist.",
-                exc,
-            )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Could not save the prescription",
-            )
-
-        if saved:
-            print(
-                f"[DB] SUCCESS: prescription id={saved['prescription']['id']} with "
-                f"{len(saved['medications'])} medication(s) saved",
-                flush=True,
-            )
-        else:
-            print("[DB] Nothing saved: no valid medication entries.", flush=True)
-
-    # Step 4: Return OCR text, the saved prescription and its medications.
-    has_medications = bool(saved)
-
+    # Step 4: Return OCR text and the extracted prescription for review.
     return {
         "success": True,
         "message": (
-            "Prescription saved"
-            if has_medications
+            "Prescription extracted"
+            if extracted
             else "No medications detected in the image"
             if text.strip()
             else "No text detected in the image"
@@ -274,6 +242,8 @@ async def ocr(
         "text": text,
         "pages": result["pages"],
         "size": len(contents),
-        "prescription": saved["prescription"] if saved else None,
-        "medications": saved["medications"] if saved else [],
+        "prescription": extracted["prescription"] if extracted else None,
+        "medications": extracted["medications"] if extracted else [],
+        # True when the LLM output was cut off and some medicines may be missing.
+        "truncated": bool(gemini_result.get("truncated")) if medications else False,
     }

@@ -47,6 +47,73 @@ def _parse_time(value) -> time | None:
         return None
 
 
+def _clean_medication(item) -> dict | None:
+    """Validate and normalise one medication dict. None when it has no usable name."""
+    if not isinstance(item, dict):
+        return None
+    medicine_name = _clean_str(item.get("medicine_name"), 255)
+    if not medicine_name:
+        return None
+
+    times: list[time] = []
+    for schedule in item.get("schedules") or []:
+        if not isinstance(schedule, dict):
+            continue
+        scheduled_time = _parse_time(schedule.get("scheduled_time"))
+        if scheduled_time is None or scheduled_time in times:
+            continue
+        if schedule.get("enabled", True):
+            times.append(scheduled_time)
+
+    return {
+        "medicine_name": medicine_name,
+        "strength": _clean_str(item.get("strength"), 100),
+        "dosage": _clean_str(item.get("dosage"), 100),
+        "dosage_unit": _clean_str(item.get("dosage_unit"), 50),
+        "frequency": _clean_str(item.get("frequency"), 100),
+        "duration_days": _parse_int(item.get("duration_days")),
+        "start_date": _parse_date(item.get("start_date")),
+        "end_date": _parse_date(item.get("end_date")),
+        "instructions": _clean_str(item.get("instructions")),
+        "ai_confidence": _parse_confidence(item.get("ai_confidence")),
+        "schedule_times": sorted(times),
+    }
+
+
+def _clean_prescription_meta(extracted: dict) -> dict:
+    meta = extracted.get("prescription")
+    meta = meta if isinstance(meta, dict) else {}
+    return {
+        "name": _clean_str(meta.get("name"), 255) or "Prescription",
+        "doctor_name": _clean_str(meta.get("doctor_name"), 255),
+        "notes": _clean_str(meta.get("notes")),
+    }
+
+
+def normalize_extraction(extracted: dict) -> dict | None:
+    """Clean the LLM JSON for the frontend. Does NOT touch the database.
+
+    Returns {"prescription": {...}, "medications": [...]} without ids, or None when no
+    valid medication was found. Nothing is stored until the user confirms.
+    """
+    medications = []
+    for item in extracted.get("medications") or []:
+        cleaned = _clean_medication(item)
+        if cleaned is None:
+            continue
+        times = cleaned.pop("schedule_times")
+        cleaned["start_date"] = cleaned["start_date"].isoformat() if cleaned["start_date"] else None
+        cleaned["end_date"] = cleaned["end_date"].isoformat() if cleaned["end_date"] else None
+        cleaned["schedules"] = [
+            {"scheduled_time": t.isoformat(), "enabled": True} for t in times
+        ]
+        medications.append(cleaned)
+
+    if not medications:
+        return None
+    return {"prescription": _clean_prescription_meta(extracted), "medications": medications}
+
+
 def _serialize(prescription: Prescription) -> dict:
     return {
         "prescription": {
@@ -84,58 +151,33 @@ def _serialize(prescription: Prescription) -> dict:
     }
 
 
-def store_prescription(db: Session, user_id: int, extracted: dict) -> dict | None:
-    """Save Gemini's JSON as Prescription -> PrescriptionMedication -> MedicationSchedule rows.
+# Public name for routes that need to return a saved prescription.
+serialize_prescription = _serialize
 
-    Returns the saved records (with ids) in the shape the frontend renders, or None when
-    no valid medication was found.
+
+def store_prescription(db: Session, user_id: int, data: dict) -> dict | None:
+    """Create a CONFIRMED Prescription with its medications and reminder schedules.
+
+    Called only when the user confirms in the app. Returns the saved records (with ids),
+    or None when there is no valid medication.
     """
-    meta = extracted.get("prescription")
-    meta = meta if isinstance(meta, dict) else {}
-
     prescription = Prescription(
         user_id=user_id,
-        name=_clean_str(meta.get("name"), 255) or "Prescription",
-        doctor_name=_clean_str(meta.get("doctor_name"), 255),
-        notes=_clean_str(meta.get("notes")),
-        status=PrescriptionStatus.PENDING_REVIEW,
+        status=PrescriptionStatus.CONFIRMED,
+        **_clean_prescription_meta(data),
     )
 
-    for item in extracted.get("medications") or []:
-        if not isinstance(item, dict):
+    for item in data.get("medications") or []:
+        cleaned = _clean_medication(item)
+        if cleaned is None:
             continue
-        medicine_name = _clean_str(item.get("medicine_name"), 255)
-        if not medicine_name:
-            continue
+        times = cleaned.pop("schedule_times")
 
-        medication = PrescriptionMedication(
-            medicine_name=medicine_name,
-            strength=_clean_str(item.get("strength"), 100),
-            dosage=_clean_str(item.get("dosage"), 100),
-            dosage_unit=_clean_str(item.get("dosage_unit"), 50),
-            frequency=_clean_str(item.get("frequency"), 100),
-            duration_days=_parse_int(item.get("duration_days")),
-            start_date=_parse_date(item.get("start_date")),
-            end_date=_parse_date(item.get("end_date")),
-            instructions=_clean_str(item.get("instructions")),
-            ai_confidence=_parse_confidence(item.get("ai_confidence")),
-        )
-
-        seen_times: set[time] = set()
-        for schedule in item.get("schedules") or []:
-            if not isinstance(schedule, dict):
-                continue
-            scheduled_time = _parse_time(schedule.get("scheduled_time"))
-            if scheduled_time is None or scheduled_time in seen_times:
-                continue
-            seen_times.add(scheduled_time)
+        medication = PrescriptionMedication(**cleaned, user_verified=True)
+        for scheduled_time in times:
             medication.schedules.append(
-                MedicationSchedule(
-                    scheduled_time=scheduled_time,
-                    enabled=bool(schedule.get("enabled", True)),
-                )
+                MedicationSchedule(scheduled_time=scheduled_time, enabled=True)
             )
-
         prescription.medications.append(medication)
 
     if not prescription.medications:

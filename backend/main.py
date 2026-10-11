@@ -8,6 +8,8 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.routes.auth import router as auth_router
 from src.routes.ocr import router as ocr_router
+from src.routes.prescriptions import router as prescriptions_router
+from src.routes.medicines import router as medicine_router
 from src.utils.config.db import init_db
 
 
@@ -35,6 +37,8 @@ async def log_validation_error(request: Request, exc: RequestValidationError):
 
 app.include_router(auth_router)
 app.include_router(ocr_router)
+app.include_router(prescriptions_router)
+app.include_router(medicine_router)
 
 
 # Test Route

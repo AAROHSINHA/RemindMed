@@ -18,3 +18,12 @@ export const getTodayMedicines = () =>
       timeout: 3000,
     }),
   );
+
+export const getMedications = () => {
+  return withAuthRetry<TodayMedicine[]>((token) =>
+    axios.get<TodayMedicine[]>(`${API_BASE_URL}/medications`, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 3000,
+    }),
+  );
+};

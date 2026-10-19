@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProfileHeader } from "@/components/main/profile-header";
-import { ScanTabButton } from "@/components/main/scan-tab-button";
 import { colors } from "@/constants/colors";
 import { sizes } from "@/constants/sizes";
 import { UserProvider } from "@/hooks/use-user";
@@ -63,20 +62,11 @@ export default function MainLayout() {
             ),
           }}
         />
-        <Tabs.Screen name="scan" options={{ tabBarButton: () => <ScanTabButton /> }} />
-        <Tabs.Screen
-          name="history"
-          options={{
-            title: "History",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="time-outline" size={sizes.iconSize.lg} color={color} />
-            ),
-          }}
-        />
         <Tabs.Screen
           name="profile"
           options={{
             title: "Profile",
+            headerShown: false, // the profile page has its own purple banner
             tabBarIcon: ({ color }) => (
               <Ionicons name="person-outline" size={sizes.iconSize.lg} color={color} />
             ),

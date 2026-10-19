@@ -1,32 +1,36 @@
 import React from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { ActivityIndicator, Modal, StyleSheet, View } from "react-native";
+
+import { colors } from "@/constants/colors";
 
 interface LoaderProps {
   visible: boolean;
 }
 
+// Rendered in a Modal so it covers the whole screen, including headers and the tab bar,
+// no matter where on the page <Loader /> is placed. It also blocks taps while loading.
 const Loader: React.FC<LoaderProps> = ({ visible }) => {
-  if (!visible) return null;
-
   return (
-    <View style={styles.overlay}>
-      <ActivityIndicator size="large" color="#fff" />
-    </View>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={() => {}} // ignore the Android back button while loading
+    >
+      <View style={styles.overlay}>
+        <ActivityIndicator size="large" color={colors.white} />
+      </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFill,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)", // translucent
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 9999,
   },
 });
 

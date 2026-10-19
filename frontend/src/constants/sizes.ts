@@ -38,6 +38,8 @@ export const sizes = {
   inputHeight: 56,
   buttonHeight: 56,
   avatarSize: 96,
+  avatarBorder: 4,
+  profileBannerHeight: 140,
   iconBoxSize: 44,
   avatarSmall: 48,
   tabBarHeight: 72,

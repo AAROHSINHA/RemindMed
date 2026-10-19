@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -6,17 +7,25 @@ import { colors } from "@/constants/colors";
 import { sizes } from "@/constants/sizes";
 import { useUser } from "@/hooks/use-user";
 
-const getGreeting = () => {
-  const hour = new Date().getHours();
+const getGreeting = (hour: number) => {
+  if (hour < 5) return "It's late night,";
   if (hour < 12) return "Good Morning,";
   if (hour < 17) return "Good Afternoon,";
-  return "Good Evening,";
+  if (hour < 21) return "Good Evening,";
+  return "It's getting late,";
 };
 
 // Shown at the top of every main tab.
 export function ProfileHeader() {
   const insets = useSafeAreaInsets();
   const user = useUser();
+
+  // Re-check the time every minute so the greeting changes while the app stays open.
+  const [hour, setHour] = useState(new Date().getHours());
+  useEffect(() => {
+    const timer = setInterval(() => setHour(new Date().getHours()), 60000);
+    return () => clearInterval(timer);
+  }, []);
   const firstName = user?.name.split(" ")[0] ?? "";
 
   return (
@@ -26,7 +35,7 @@ export function ProfileHeader() {
       </View>
 
       <View style={styles.text}>
-        <Text style={styles.greeting}>{getGreeting()}</Text>
+        <Text style={styles.greeting}>{getGreeting(hour)}</Text>
         <Text style={styles.name}>{firstName} 👋</Text>
       </View>
 

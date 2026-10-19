@@ -1,5 +1,10 @@
 import { getMedications, TodayMedicine } from "@/api/user/medicine";
+import { Ionicons } from "@expo/vector-icons";
 import { MedicationCard } from "@/components/main/medication-card";
+import { MainButton } from "@/components/sharedComponents/main-button";
+import { colors } from "@/constants/colors";
+import { sizes } from "@/constants/sizes";
+import { scanPrescription } from "@/utils/scan-prescription";
 import Loader from "@/components/sharedComponents/loader";
 import { ScreenContainer } from "@/components/sharedComponents/screen-container";
 import { SectionHeader } from "@/components/sharedComponents/section-header";
@@ -28,6 +33,11 @@ export default function MedicationsScreen() {
   return (
     <ScreenContainer>
       <Loader visible={isLoading} />
+      <MainButton
+        text="Scan prescription"
+        onClick={scanPrescription}
+        icon={<Ionicons name="camera" size={sizes.iconSize.lg} color={colors.white} />}
+      />
       <SectionHeader title="My Medications" />
       {medicines.map((medication) => (
         <MedicationCard key={medication.medication_id} {...medication} />
